@@ -34,7 +34,10 @@ def draw_svg(path, lines, title, width, top=58, step=21):
         '<g font-family="Consolas, Cascadia Mono, monospace" font-size="16" xml:space="preserve">',
     ]
     for index, line in enumerate(lines):
-        elements.append(f'<text x="24" y="{top + index*step}" fill="{color_for(line)}">{html.escape(line)}</text>')
+        # Nonbreaking spaces preserve ASCII geometry in SVG renderers that ignore
+        # inherited xml:space (including the GitHub image preview).
+        escaped = html.escape(line).replace(' ', '&#160;')
+        elements.append(f'<text x="24" y="{top + index*step}" fill="{color_for(line)}" style="white-space:pre">{escaped}</text>')
     elements.extend(['</g>', '</svg>'])
     path.write_text('\n'.join(elements) + '\n', encoding='utf-8')
     return height
