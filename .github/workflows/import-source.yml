@@ -1,0 +1,70 @@
+name: Import reviewed source archive
+
+# Maintainer utility for the initial browser-only upload. It never builds or
+# installs a Windows driver, handles signing keys, or changes repository settings.
+on:
+  push:
+    branches: [main]
+    paths: ['.source-upload.zip', '.github/workflows/import-source.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bluemoth32-source-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: github.repository == 'EdwardoRevilla/bluemoth32'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify archive, preserve directories, and publish source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth=1 --branch main "https://github.com/${GITHUB_REPOSITORY}.git" source
+          cd source
+          if [ ! -f .source-upload.zip ]; then
+            echo 'No source archive is pending; nothing to import.'
+            exit 0
+          fi
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path, PurePosixPath
+          import stat
+          import zipfile
+
+          archive = Path('.source-upload.zip')
+          expected = '5d185a53c026f43f8c3e792d05e35ba3313078fc3eb249706a2fc00a33097363'
+          if hashlib.sha256(archive.read_bytes()).hexdigest() != expected:
+              raise SystemExit('Archive differs from the reviewed source package')
+          root = Path.cwd().resolve()
+          with zipfile.ZipFile(archive) as source:
+              entries = source.infolist()
+              if len(entries) != 62 or sum(item.file_size for item in entries) > 10_000_000:
+                  raise SystemExit('Unexpected archive size or file count')
+              for item in entries:
+                  name = PurePosixPath(item.filename)
+                  if (name.is_absolute() or '..' in name.parts or ':' in item.filename
+                      or '\\' in item.filename or name.parts[0] in ('.git', '.github')
+                      or stat.S_ISLNK(item.external_attr >> 16)):
+                      raise SystemExit('Unsafe archive entry')
+                  destination = root.joinpath(*name.parts).resolve()
+                  if root not in destination.parents:
+                      raise SystemExit('Entry outside repository')
+                  destination.parent.mkdir(parents=True, exist_ok=True)
+                  destination.write_bytes(source.read(item))
+          print('Verified and imported 62 reviewed source files.')
+          PY
+          git rm -- .source-upload.zip
+          git add -- .
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Publish BlueMoth32 firmware, driver, installer and identity'
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:main
