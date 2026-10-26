@@ -34,10 +34,14 @@ def draw_svg(path, lines, title, width, top=58, step=21):
         '<g font-family="Consolas, Cascadia Mono, monospace" font-size="16" xml:space="preserve">',
     ]
     for index, line in enumerate(lines):
-        # Nonbreaking spaces preserve ASCII geometry in SVG renderers that ignore
-        # inherited xml:space (including the GitHub image preview).
-        escaped = html.escape(line).replace(' ', '&#160;')
-        elements.append(f'<text x="24" y="{top + index*step}" fill="{color_for(line)}" style="white-space:pre">{escaped}</text>')
+        # Position every visible glyph explicitly. ASCII geometry then survives
+        # SVG sanitizers, whitespace collapsing and substituted system fonts.
+        glyphs = [(column, char) for column, char in enumerate(line) if char != ' ']
+        if not glyphs:
+            continue
+        positions = ' '.join(f'{24 + column*9.6:g}' for column, _ in glyphs)
+        escaped = html.escape(''.join(char for _, char in glyphs))
+        elements.append(f'<text x="{positions}" y="{top + index*step}" fill="{color_for(line)}">{escaped}</text>')
     elements.extend(['</g>', '</svg>'])
     path.write_text('\n'.join(elements) + '\n', encoding='utf-8')
     return height
