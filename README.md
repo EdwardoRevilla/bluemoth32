@@ -1,6 +1,6 @@
 # BlueMoth32
 
-![BlueMoth32, una polilla ASCII con antenas de radio y cuerpo ESP32](assets/brand/bluemoth32.svg)
+![BlueMoth32, una polilla ASCII con antenas de radio y cuerpo ESP32](assets/brand/bluemoth32.svg?v=2)
 
 **ESP32 Bluetooth HCI para Windows. Un puente para desplegar tus conexiones.**
 
