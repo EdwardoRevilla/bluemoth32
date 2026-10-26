@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+firmware/build/
+firmware/sdkconfig
+firmware/sdkconfig.old
+*.log
+backups/
+arduino-build/
+.tooling/
+windows-driver/out/
+windows-driver/obj/
+windows-driver/package/
+windows-driver/device.local.json

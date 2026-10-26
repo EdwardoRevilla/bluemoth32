@@ -1,0 +1,64 @@
+; Experimental root-enumerated ESP32 HCI transport. Local installation only after
+; a successful WDK build, package validation and an accepted signing process.
+[Version]
+Signature="$WINDOWS NT$"
+Class=System
+ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider=%Provider%
+DriverVer=10/24/2026,0.1.0.0
+CatalogFile=Esp32HciBus.cat
+PnpLockdown=1
+
+[DestinationDirs]
+DriverCopy=13
+
+[SourceDisksNames]
+1=%DiskName%,,,
+
+[SourceDisksFiles]
+Esp32HciBus.sys=1
+
+[Manufacturer]
+%Provider%=Models,NTamd64.10.0...19041
+
+[Models.NTamd64.10.0...19041]
+%DeviceName%=Install,ROOT\Esp32HciBus
+
+[Install.NT]
+CopyFiles=DriverCopy
+
+[DriverCopy]
+Esp32HciBus.sys
+
+[Install.NT.HW]
+AddReg=HardwareSecurity
+
+[HardwareSecurity]
+HKR,,DeviceCharacteristics,0x00010001,0x00000100
+HKR,,Security,0x00000000,"D:P(A;;GA;;;SY)(A;;GA;;;BA)(A;;GA;;;LS)"
+
+[Install.NT.Services]
+AddService=Esp32HciBus,0x00000002,ServiceInstall
+
+[ServiceInstall]
+DisplayName=%DeviceName%
+ServiceType=1
+StartType=3
+ErrorControl=1
+ServiceBinary=%13%\Esp32HciBus.sys
+AddReg=ServiceParameters
+
+[ServiceParameters]
+; One root instance per machine; endpoint filled by prepare_package.py.
+HKR,Parameters,SerialDevicePath,0x00000000,"@SERIAL_DEVICE_PATH@"
+
+[Install.NT.Wdf]
+KmdfService=Esp32HciBus,WdfInstall
+
+[WdfInstall]
+KmdfLibraryVersion=1.15
+
+[Strings]
+Provider="ESP32 HCI Lab"
+DiskName="Experimental ESP32 HCI bus"
+DeviceName="ESP32 HCI over selected CP210x (experimental)"

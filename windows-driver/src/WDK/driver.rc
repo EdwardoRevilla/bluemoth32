@@ -1,0 +1,14 @@
+#include <windows.h>
+
+#include <ntverp.h>
+
+#define VER_FILETYPE    VFT_DLL
+#define VER_FILESUBTYPE VFT2_UNKNOWN
+#define VER_FILEDESCRIPTION_STR     "Experimental ESP32 HCI over selected CP210x"
+#define VER_INTERNALNAME_STR        "Esp32HciBus.sys"
+#define VER_ORIGINALFILENAME_STR    "Esp32HciBus.sys"
+
+#include "common.ver"
+
+//MofResourceName MOFDATA driver.bmf
+
